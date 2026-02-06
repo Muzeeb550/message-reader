@@ -1,65 +1,87 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
 
 export default function Home() {
+  const [text, setText] = useState('');
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Register service worker for PWA
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch((error) => {
+        console.log('Service Worker registration failed:', error);
+      });
+    }
+  }, []);
+
+  const speak = () => {
+    if ('speechSynthesis' in window) {
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'hi-IN'; // Fixed to Hindi only
+      
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert('Speech synthesis not supported in this browser');
+    }
+  };
+
+  const stop = () => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 flex items-center justify-center">
+      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-2xl w-full">
+        <h1 className="text-3xl font-bold text-gray-800 mb-2 text-center">
+          Message Reader
+        </h1>
+        <p className="text-gray-600 mb-6 text-center">
+          Paste your message and hear it spoken
+        </p>
+
+        {/* Text Input */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Paste Message Here
+          </label>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Paste your message here..."
+            rows={8}
+            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        {/* Buttons */}
+        <div className="flex gap-4">
+          <button
+            onClick={speak}
+            disabled={!text || isSpeaking}
+            className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {isSpeaking ? 'Speaking...' : 'Speak'}
+          </button>
+          
+          {isSpeaking && (
+            <button
+              onClick={stop}
+              className="flex-1 bg-red-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-red-700 transition-colors"
+            >
+              Stop
+            </button>
+          )}
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
