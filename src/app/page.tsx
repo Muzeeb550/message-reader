@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import ClearMessagesModal from './components/modals/ClearMessagesModal';
+
 
 interface Message {
   id: number;
@@ -16,6 +18,8 @@ export default function Home() {
   const [appTitle, setAppTitle] = useState('Message Reader');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState('');
+  const [showClearModal, setShowClearModal] = useState(false);
+
   
   const titleRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
@@ -145,12 +149,12 @@ export default function Home() {
     }
   };
 
-  const clearMessages = () => {
-    if (confirm('Clear all messages?')) {
-      setMessages([]);
-      localStorage.removeItem('messages');
-    }
-  };
+ const clearMessages = () => {
+  setMessages([]);
+  localStorage.removeItem('messages');
+  setShowClearModal(false);
+};
+
 
   const startEditingTitle = () => {
     setTempTitle(appTitle);
@@ -248,11 +252,12 @@ export default function Home() {
               </div>
               {messages.length > 0 && (
                 <button
-                  onClick={clearMessages}
-                  className="touch-manipulation text-gray-400 hover:text-white text-xs bg-[#2a3942] px-3 py-1.5 rounded-lg active:scale-95 transition-all"
-                >
-                  Clear
-                </button>
+  onClick={() => setShowClearModal(true)}  // ✅ Correct - opens modal
+  className="touch-manipulation text-gray-400 hover:text-white text-xs bg-[#2a3942] px-3 py-1.5 rounded-lg active:scale-95 transition-all"
+>
+  Clear
+</button>
+
               )}
             </>
           )}
@@ -353,6 +358,14 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Clear Messages Modal */}
+      <ClearMessagesModal
+        isOpen={showClearModal}
+        messageCount={messages.length}
+        onConfirm={clearMessages}
+        onCancel={() => setShowClearModal(false)}
+      />
+
       <style jsx>{`
         @keyframes fadeIn {
           from {
@@ -368,6 +381,8 @@ export default function Home() {
           animation: fadeIn 0.3s ease-out;
         }
       `}</style>
+
+      
     </main>
   );
 }
