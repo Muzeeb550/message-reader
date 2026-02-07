@@ -196,10 +196,9 @@ export default function Home() {
   // Handle double tap
   const handleTitleClick = () => {
     const now = Date.now();
-    const DOUBLE_TAP_DELAY = 300; // milliseconds
+    const DOUBLE_TAP_DELAY = 300;
     
     if (now - lastTap.current < DOUBLE_TAP_DELAY) {
-      // Double tap detected
       startEditingTitle();
     }
     
@@ -207,10 +206,10 @@ export default function Home() {
   };
 
   return (
-    <main className="h-screen flex flex-col bg-[#0b141a]">
-      {/* Header - WhatsApp style */}
-      <div className="bg-[#1f2c34] shadow-lg">
-        <div className="px-4 py-4 flex items-center justify-between">
+    <main className="fixed inset-0 flex flex-col bg-[#0b141a] overflow-hidden">
+      {/* Header - Fixed at top */}
+      <div className="flex-shrink-0 bg-[#1f2c34] shadow-lg">
+        <div className="px-4 py-3 flex items-center justify-between">
           {isEditingTitle ? (
             <div className="flex items-center gap-3 flex-1 animate-fadeIn">
               <input
@@ -221,14 +220,14 @@ export default function Home() {
                 onBlur={saveTitle}
                 autoFocus
                 maxLength={30}
-                className="flex-1 bg-[#2a3942] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00a884] text-xl font-semibold"
+                className="flex-1 bg-[#2a3942] text-white px-4 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00a884] text-lg font-semibold"
                 placeholder="Enter title..."
               />
               <button
                 onClick={saveTitle}
-                className="touch-manipulation bg-[#00a884] text-white p-3 rounded-full active:scale-95 transition-transform"
+                className="touch-manipulation bg-[#00a884] text-white p-2.5 rounded-full active:scale-95 transition-transform"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
               </button>
@@ -242,15 +241,15 @@ export default function Home() {
                 onTouchEnd={handleTouchEnd}
                 className="flex-1 cursor-pointer select-none touch-manipulation"
               >
-                <h1 className="text-white text-2xl font-bold tracking-wide bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
+                <h1 className="text-white text-xl font-bold tracking-wide">
                   {appTitle}
                 </h1>
-                <p className="text-gray-400 text-xs mt-1 font-light">Swipe right or double tap to edit</p>
+                <p className="text-gray-400 text-[10px] mt-0.5">Swipe right or double tap to edit</p>
               </div>
               {messages.length > 0 && (
                 <button
                   onClick={clearMessages}
-                  className="touch-manipulation text-gray-400 hover:text-white text-sm bg-[#2a3942] px-3 py-2 rounded-lg active:scale-95 transition-all"
+                  className="touch-manipulation text-gray-400 hover:text-white text-xs bg-[#2a3942] px-3 py-1.5 rounded-lg active:scale-95 transition-all"
                 >
                   Clear
                 </button>
@@ -260,8 +259,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 bg-[#0b141a] p-4 overflow-y-auto">
+      {/* Messages Area - Scrollable */}
+      <div className="flex-1 overflow-y-auto bg-[#0b141a] p-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-gray-500 text-center">
             <p>Send a message to start</p>
@@ -327,8 +326,8 @@ export default function Home() {
         )}
       </div>
 
-      {/* Input Bar - WhatsApp style at bottom */}
-      <div className="bg-[#1f2c34] px-3 py-2">
+      {/* Input Bar - Fixed at bottom */}
+      <div className="flex-shrink-0 bg-[#1f2c34] px-3 py-2">
         <div className="flex items-end gap-2">
           <div className="flex-1 bg-[#2a3942] rounded-lg px-3 py-2">
             <textarea
