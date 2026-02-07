@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface Message {
   id: number;
@@ -13,8 +13,15 @@ export default function Home() {
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [speakingId, setSpeakingId] = useState<number | null>(null);
+  const [appTitle, setAppTitle] = useState('Message Reader');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState('');
+  
+  const titleRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef(0);
+  const lastTap = useRef(0);
 
-  // Load messages from localStorage on mount
+  // Load messages and app title from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem('messages');
     if (stored) {
@@ -25,6 +32,11 @@ export default function Home() {
       }));
       setMessages(messagesWithDates);
     }
+
+    const savedTitle = localStorage.getItem('appTitle');
+    if (savedTitle) {
+      setAppTitle(savedTitle);
+    }
   }, []);
 
   // Save messages to localStorage whenever they change
@@ -33,6 +45,11 @@ export default function Home() {
       localStorage.setItem('messages', JSON.stringify(messages));
     }
   }, [messages]);
+
+  // Save app title to localStorage
+  useEffect(() => {
+    localStorage.setItem('appTitle', appTitle);
+  }, [appTitle]);
 
   // Register service worker for PWA
   useEffect(() => {
@@ -135,19 +152,112 @@ export default function Home() {
     }
   };
 
+  const startEditingTitle = () => {
+    setTempTitle(appTitle);
+    setIsEditingTitle(true);
+  };
+
+  const saveTitle = () => {
+    if (tempTitle.trim()) {
+      setAppTitle(tempTitle.trim());
+    }
+    setIsEditingTitle(false);
+  };
+
+  const cancelEditingTitle = () => {
+    setIsEditingTitle(false);
+    setTempTitle('');
+  };
+
+  const handleTitleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveTitle();
+    } else if (e.key === 'Escape') {
+      cancelEditingTitle();
+    }
+  };
+
+  // Handle swipe right gesture
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const swipeDistance = touchEndX - touchStartX.current;
+    
+    // Swipe right detection (at least 50px)
+    if (swipeDistance > 50) {
+      startEditingTitle();
+    }
+  };
+
+  // Handle double tap
+  const handleTitleClick = () => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300; // milliseconds
+    
+    if (now - lastTap.current < DOUBLE_TAP_DELAY) {
+      // Double tap detected
+      startEditingTitle();
+    }
+    
+    lastTap.current = now;
+  };
+
   return (
     <main className="h-screen flex flex-col bg-[#0b141a]">
       {/* Header - WhatsApp style */}
-      <div className="bg-[#1f2c34] px-4 py-3 flex items-center justify-between shadow-lg">
-        <h1 className="text-white text-xl font-medium">Message Reader</h1>
-        {messages.length > 0 && (
-          <button
-            onClick={clearMessages}
-            className="text-gray-400 hover:text-white text-sm"
-          >
-            Clear
-          </button>
-        )}
+      <div className="bg-[#1f2c34] shadow-lg">
+        <div className="px-4 py-4 flex items-center justify-between">
+          {isEditingTitle ? (
+            <div className="flex items-center gap-3 flex-1 animate-fadeIn">
+              <input
+                type="text"
+                value={tempTitle}
+                onChange={(e) => setTempTitle(e.target.value)}
+                onKeyDown={handleTitleKeyPress}
+                onBlur={saveTitle}
+                autoFocus
+                maxLength={30}
+                className="flex-1 bg-[#2a3942] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00a884] text-xl font-semibold"
+                placeholder="Enter title..."
+              />
+              <button
+                onClick={saveTitle}
+                className="touch-manipulation bg-[#00a884] text-white p-3 rounded-full active:scale-95 transition-transform"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <>
+              <div 
+                ref={titleRef}
+                onClick={handleTitleClick}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                className="flex-1 cursor-pointer select-none touch-manipulation"
+              >
+                <h1 className="text-white text-2xl font-bold tracking-wide bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
+                  {appTitle}
+                </h1>
+                <p className="text-gray-400 text-xs mt-1 font-light">Swipe right or double tap to edit</p>
+              </div>
+              {messages.length > 0 && (
+                <button
+                  onClick={clearMessages}
+                  className="touch-manipulation text-gray-400 hover:text-white text-sm bg-[#2a3942] px-3 py-2 rounded-lg active:scale-95 transition-all"
+                >
+                  Clear
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Messages Area */}
@@ -243,6 +353,22 @@ export default function Home() {
           </button>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+      `}</style>
     </main>
   );
 }
